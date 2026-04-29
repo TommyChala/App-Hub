@@ -57,11 +57,15 @@ public class ImportSyncObserver {
     private void checkJobProgress (Long jobId, SystemModel system) {
         if (jobService.isEverythingStaged(jobId)) {
             performReconciliation(jobId, system);
-        }
-        if (jobService.isEverythingReconciled(jobId)) {
-            promoteToProduction(jobId, system);
+            if (jobService.isEverythingReconciled(jobId)) {
+                promoteToProduction(jobId, system);
+            }
         }
     }
+     /*   else if (jobService.isEverythingReconciled(jobId)) {
+            promoteToProduction(jobId, system);
+        }
+    }*/
     private void performReconciliation (Long jobId, SystemModel system) {
 
         List<EntityType> registeredTypes = jobService.getRegisteredTypesForJob(jobId);
@@ -83,9 +87,8 @@ public class ImportSyncObserver {
             }
 
             jobService.updateActivityStatus(jobId, type, "RECONCILED");
-            checkJobProgress(jobId, system);
-
         }
+        checkJobProgress(jobId, system);
     }
 
     private void promoteToProduction(Long jobId, SystemModel system) {
@@ -116,7 +119,7 @@ public class ImportSyncObserver {
             jobService.updateActivityStatus(jobId, type, "COMPLETED");
         }
         jobService.markJobCompleted(jobId);
-        checkJobProgress(jobId, system);
+        //checkJobProgress(jobId, system);
     }
 
 

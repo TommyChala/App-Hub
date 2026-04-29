@@ -52,7 +52,7 @@ public class ImportService {
         }
     }
 
-    public void gbuildStagingTablesFromDirectory(String directoryPath, String systemId) {
+    public void buildStagingTablesFromDirectory(String directoryPath, String systemId) {
 
         File folder = new File(directoryPath);
 
