@@ -30,7 +30,6 @@ public class CSVFileValidator {
 
     //new
     public static boolean validateHeadersAgainstMapping(String[] headers, List<MappingConfigModel> mappingConfigs) {
-        // 1. Log what we received from the CSV
 
         if (mappingConfigs.isEmpty()) {
             throw new RuntimeException("Provided mappingconfig is empty");
@@ -77,7 +76,6 @@ public class CSVFileValidator {
             if (type == MappingConfigMappingType.TRANSFORMATION) {
                 List<MappingExpressionModel> exprs = mapping.getExpressions();
 
-                // Log the size to see if Hibernate actually loaded them
                 System.out.println("DEBUG: Expressions found in list: " + (exprs == null ? "NULL" : exprs.size()));
                 boolean hasActiveExpr = mapping.getExpressions() != null &&
                         mapping.getExpressions().stream().anyMatch(e -> e.isActive());

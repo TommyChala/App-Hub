@@ -66,7 +66,6 @@ public class MappingConfigBuilder {
         model.setEntityType(entityType);
         model.setSourceAttribute(dto.sourceAttribute());
 
-        // THE SENIOR FIX: Just one setter for all attribute types!
         model.setTargetAttribute(attribute);
 
         model.setDataType(MappingConfigDataType.valueOf(dto.dataType().toUpperCase()));
@@ -83,17 +82,14 @@ public class MappingConfigBuilder {
             String entityTypeStr,
             RepositoryMapHelper repositoryMapHelper
     ) {
-        // 1. Resolve the EntityType (ACCOUNT or ENTITLEMENT)
         EntityType entityType = EntityType.valueOf(entityTypeStr.toUpperCase());
 
-        // 2. Resolve the correct repository using our generic interface
         BaseEntityAttributeModelRepository<? extends BaseEntityAttributeModel> repo = switch (entityType) {
             case ACCOUNT -> repositoryMapHelper.getAccountAttributeRepository();
             case ENTITLEMENT -> repositoryMapHelper.getEntitlementAttributeRepository();
             default -> throw new IllegalArgumentException("Unsupported type: " + entityTypeStr);
         };
 
-        // 3. Find the attribute (returns a BaseEntityAttribute)
         BaseEntityAttributeModel attribute = repo.findByName(dto.targetAttribute())
                 .orElseThrow(() -> new RuntimeException("Attribute not found: " + dto.targetAttribute()));
 
@@ -103,7 +99,6 @@ public class MappingConfigBuilder {
         model.setEntityType(entityType);
         model.setSourceAttribute(dto.sourceAttribute());
 
-        // THE SENIOR FIX: Just one setter for all attribute types!
         model.setTargetAttribute(attribute);
 
         model.setDataType(MappingConfigDataType.valueOf(dto.dataType().toUpperCase()));

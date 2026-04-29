@@ -22,9 +22,6 @@ public class StagingTableManager {
 
     public void prepareStagingTableAndReturnStagingName(EntityType entityType, SystemModel system, ProcessingContext context, String tableName) {
 
-        //String tableName = SqlUtils.getStagingTableName(entityType, system);
-
-        // 1. Drop existing table
         stagingService.executeDDL("DROP TABLE IF EXISTS " + tableName);
 
         // 2. Build the CREATE TABLE statement
@@ -36,21 +33,17 @@ public class StagingTableManager {
                         row_hash char(64)
                 """.formatted(tableName));
 
-        // 3. Dynamically add columns based on the context
         for (String columnName : context.insertColumns()) {
-            // We use the safe column names already prepared in the context
             sql.append(", ").append(columnName).append(" VARCHAR(255)");
         }
 
         sql.append("\n);");
 
-        // 4. Execute
         try {
             stagingService.executeDDL(sql.toString());
         } catch (Exception e) {
             throw new RuntimeException("stagingTable creation failed" + e);
         }
 
-        //return tableName;
     }
 }

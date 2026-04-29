@@ -16,7 +16,7 @@ public class EntitySchemaRegistry {
 
     @PostConstruct
     public void init() {
-        // We store everything EXCEPT the dynamic table names
+
         staticMetadata.put(EntityType.ACCOUNT, new EntityMetaData(
                 "businesskey",
                 "account_id",
@@ -42,7 +42,6 @@ public class EntitySchemaRegistry {
         ));
     }
 
-    // This is where you use your SqlUtils!
     public ResolvedEntitySchema resolve(EntityType type, SystemModel system) {
             EntityMetaData meta = staticMetadata.get(type);
 

@@ -4,7 +4,7 @@ public record EntityMetaData(
         String businessKeyCol,
         String ownerJoinColumn,
         String prodIdCol,
-        String hashTable, // This one is usually shared/static
+        String hashTable,
         String ownerTable
 ) {
 }

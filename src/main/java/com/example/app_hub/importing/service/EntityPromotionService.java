@@ -17,12 +17,10 @@ import java.util.List;
 @Service
 public class EntityPromotionService {
 
-    private final ReconciliationService reconciliationService;
     private final EntitySchemaRegistry entitySchemaRegistry;
     private final JdbcTemplate jdbcTemplate;
 
-    public EntityPromotionService(ReconciliationService reconciliationService, EntitySchemaRegistry entitySchemaRegistry, JdbcTemplate jdbcTemplate) {
-        this.reconciliationService = reconciliationService;
+    public EntityPromotionService(EntitySchemaRegistry entitySchemaRegistry, JdbcTemplate jdbcTemplate) {
         this.entitySchemaRegistry = entitySchemaRegistry;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -50,10 +48,6 @@ public class EntityPromotionService {
 
     private void promoteNewBaseEntities(EntityType type, SystemModel system, ResolvedEntitySchema schema) {
 
-        //ResolvedEntitySchema schema = entitySchemaRegistry.resolve(type, system);
-
-        //String entity = type.toString().toLowerCase();
-
         String sql = String.format("""
             INSERT INTO %s (uid, %s, system_id, is_current)
             SELECT gen_random_uuid(), s.%s, ?, true
@@ -65,11 +59,9 @@ public class EntityPromotionService {
         int count = jdbcTemplate.update(sql, system.getId());
         System.out.println("Promoted " + count + " new records to " + schema.entityProductionTable());
     }
-    //public void promoteAttributes(String stagingTable, SystemModel system, List<? extends BaseEntityAttribute> attributes,
-    //                             String valueTable, String ownerTable, String ownerJoinColumn, String businessKeyCol) {
+
     private void promoteAttributes(EntityType type, SystemModel system, List<? extends BaseEntityAttributeModel> attributes, ResolvedEntitySchema schema) {
 
-        //ResolvedEntitySchema schema = entitySchemaRegistry.resolve(type, system);
         String attributeValueModel = switch (type) {
             case ACCOUNT -> "account_attribute_value_model";
             case ENTITLEMENT -> "entitlement_attribute_value_model";
@@ -97,14 +89,14 @@ public class EntityPromotionService {
             ON CONFLICT (%2$s, attribute_id)
             DO UPDATE SET %3$s = EXCLUDED.%3$s, is_row_latest = true
             """,
-                    attributeValueModel,            // %1$s
-                    schema.ownerJoinColumn(),       // %2$s
-                    targetColumn,                   // %3$s
-                    SqlUtils.safeColumnName(attr.getName()), // %4$s
-                    castType,                       // %5$s
-                    schema.stagingTable(),          // %6$s
-                    schema.ownerTable(),            // %7$s
-                    schema.businessKeyCol()         // %8$s
+                    attributeValueModel,
+                    schema.ownerJoinColumn(),
+                    targetColumn,
+                    SqlUtils.safeColumnName(attr.getName()),
+                    castType,
+                    schema.stagingTable(),
+                    schema.ownerTable(),
+                    schema.businessKeyCol()
             );
 
             jdbcTemplate.update(sql, attr.getId(), system.getId());
@@ -123,10 +115,10 @@ public class EntityPromotionService {
                 WHERE s.import_status = 5
             )
             """,
-                schema.entityProductionTable(), // %1$s
-                schema.prodIdCol(),             // %2$s
-                schema.businessKeyCol(),        // %3$s
-                schema.stagingTable()           // %4$s
+                schema.entityProductionTable(),
+                schema.prodIdCol(),
+                schema.businessKeyCol(),
+                schema.stagingTable()
         );
 
         int count = jdbcTemplate.update(sql, system.getId());

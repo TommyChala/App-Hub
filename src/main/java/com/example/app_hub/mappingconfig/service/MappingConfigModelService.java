@@ -1,5 +1,6 @@
 package com.example.app_hub.mappingconfig.service;
 
+import com.example.app_hub.common.model.BaseEntityAttributeModel;
 import com.example.app_hub.common.utility.RepositoryMapHelper;
 import com.example.app_hub.mappingconfig.dto.AssignmentMappingConfigCreateDTO;
 import com.example.app_hub.mappingconfig.dto.AssignmentMappingConfigDTO;
@@ -38,9 +39,9 @@ public class MappingConfigModelService {
         this.repositoryMapHelper = repositoryMapHelper;
     }
 
-    public List<MappingConfigModel> createNewAssignmentConfig(AssignmentMappingConfigCreateDTO assignmentMappingConfigCreateDTO) {
+    public List<BaseEntityAttributeModel> createNewAssignmentConfig(AssignmentMappingConfigCreateDTO assignmentMappingConfigCreateDTO) {
 
-        List<MappingConfigModel> addedMappings = new ArrayList<>();
+        List<BaseEntityAttributeModel> addedMappings = new ArrayList<>();
         SystemModel mappingSystem = systemRepository.findBySystemId(Long.valueOf(assignmentMappingConfigCreateDTO.systemId()))
                 .orElseThrow(() -> new RuntimeException("Cannot find system")
                 );
@@ -53,30 +54,24 @@ public class MappingConfigModelService {
 
                 MappingExpressionModel expressionModel = mappingExpressionMapper.toModel(dto.mappingExpression());
 
-                // This method should handle setting the back-reference and saving/adding to list
                 mappingConfigBuilder.buildMappingExpression(expressionModel, newMappingConfig);
             }
-            addedMappings.add(newMappingConfig);
+            addedMappings.add(newMappingConfig.getTargetAttribute());
         }
         return addedMappings;
     }
 
+    public BaseEntityAttributeModel addNew(MappingConfigModelCreateDTO dto, String systemId, String entityTypeStr) {
 
-    public MappingConfigModel addNew(MappingConfigModelCreateDTO dto, String systemId, String entityTypeStr) {
 
-        // 1. Find the system
         SystemModel mappingSystem = systemRepository.findBySystemId(Long.valueOf(systemId))
                 .orElseThrow(() -> new RuntimeException("Cannot find system"));
 
-        // 2. Delegate everything to the Builder.
-        // Notice: We don't fetch the attribute here anymore!
-        // The builder does it using the correct repository based on entityTypeStr.
         MappingConfigModel newMappingConfig = mappingConfigBuilder.buildAttributeMappingConfig(dto, mappingSystem, entityTypeStr, repositoryMapHelper);
 
-        // 3. Save the main config first
         newMappingConfig = mappingConfigModelRepository.save(newMappingConfig);
 
-        // 4. Handle Expressions if needed
+
         if (dto.mappingType().equalsIgnoreCase("Transformation") ||
                 dto.mappingType().equalsIgnoreCase("CONSTANT")) {
 
@@ -86,6 +81,6 @@ public class MappingConfigModelService {
             mappingConfigBuilder.buildMappingExpression(expressionModel, newMappingConfig);
         }
 
-        return newMappingConfig;
+        return newMappingConfig.getTargetAttribute();
     }
 }

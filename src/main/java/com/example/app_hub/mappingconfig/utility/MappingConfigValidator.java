@@ -55,28 +55,22 @@ public class MappingConfigValidator {
         SystemModel system = systemRepository.findBySystemId(Long.valueOf(systemId))
                 .orElseThrow(() -> new RuntimeException("System not found")
                 );
-        // 1. Get all attributes for this system (or system-agnostic)
         BaseEntityAttributeModelRepository<? extends BaseEntityAttributeModel> repo = switch (EntityType.valueOf(entityTypeStr.toUpperCase())) {
             case ACCOUNT -> repositoryMapHelper.getAccountAttributeRepository();
             case ENTITLEMENT -> repositoryMapHelper.getEntitlementAttributeRepository();
             default -> throw new RuntimeException("Unable to find repository for entity type " + entityTypeStr);
         };
         List<? extends BaseEntityAttributeModel> allAttributes = repo.findBySystemOrSystemIsNull(system);
-        //List<BaseEntityAttribute> allAttributes = repositoryMapHelper
-        //      .findBySystemOrSystemIsNull(system);
 
-        // 2. Filter only required attributes
         Set<String> mandatoryAttributeNames = allAttributes.stream()
                 .filter(BaseEntityAttributeModel::isRequired)
                 .map(BaseEntityAttributeModel::getName)
                 .collect(Collectors.toSet());
 
-        // 3. Extract all attribute names from the payload
         Set<String> providedAttributeNames = mappings.stream()
                 .map(MappingConfigModelCreateDTO::targetAttribute) // or sourceAttribute, depending on your logic
                 .collect(Collectors.toSet());
 
-        // 4. Check if any mandatory attribute is missing
         Set<String> missingAttributes = new HashSet<>(mandatoryAttributeNames);
         missingAttributes.removeAll(providedAttributeNames);
 

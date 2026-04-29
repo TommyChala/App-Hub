@@ -21,7 +21,7 @@ public abstract class BaseEntityAttributeModel {
     @Column(name = "display_name")
     private String displayName;
 
-    @Enumerated(EnumType.STRING) // Standardize on String for DB readability
+    @Enumerated(EnumType.STRING)
     @Column(name = "data_type", nullable = false)
     private DataType dataType;
 
@@ -29,10 +29,9 @@ public abstract class BaseEntityAttributeModel {
     private boolean required;
 
     @ManyToOne
-    @JoinColumn(name = "system_id") // Standard snake_case for DB
+    @JoinColumn(name = "system_id")
     private SystemModel system;
 
-    // Default Constructor
     protected BaseEntityAttributeModel() {}
 
     // Shared Constructor
@@ -45,7 +44,6 @@ public abstract class BaseEntityAttributeModel {
 
     public abstract EntityType getEntityType();
 
-    // Standard Getters and Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 

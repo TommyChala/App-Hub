@@ -1,7 +1,10 @@
 package com.example.app_hub.mappingconfig.controller;
 
+import com.example.app_hub.common.api.ApiResponse;
+import com.example.app_hub.common.model.BaseEntityAttributeModel;
 import com.example.app_hub.mappingconfig.dto.AssignmentMappingConfigCreateDTO;
 import com.example.app_hub.mappingconfig.dto.MappingConfigBatchDTO;
+import com.example.app_hub.mappingconfig.dto.MappingConfigBatchResponseDTO;
 import com.example.app_hub.mappingconfig.model.MappingConfigModel;
 import com.example.app_hub.mappingconfig.service.MappingConfigModelService;
 import com.example.app_hub.mappingconfig.utility.MappingConfigValidator;
@@ -26,21 +29,27 @@ public class MappingConfigModelController {
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<Object> createBatch(
+    public ApiResponse<MappingConfigBatchResponseDTO> createBatch(
             @RequestBody MappingConfigBatchDTO batchDto
     ) {
         mappingConfigValidator.validateMandatoryAttributes(batchDto.data(), batchDto.systemId(), batchDto.entityTypeStr());
-        batchDto.data().forEach(
-                mapping -> mappingConfigModelService.addNew(mapping, batchDto.systemId(), batchDto.entityTypeStr())
-        );
-        return ResponseEntity.ok().build();
+        List<BaseEntityAttributeModel> newMappingConfigAttribute = batchDto.data().stream()
+                        .map(mapping -> mappingConfigModelService.addNew(mapping, batchDto.systemId(), batchDto.entityTypeStr()
+                        ))
+                .toList();
+        MappingConfigBatchResponseDTO mappingConfigBatchResponseDTO = new MappingConfigBatchResponseDTO(newMappingConfigAttribute);
+        return ApiResponse.ok(mappingConfigBatchResponseDTO, "MappingConfig batch successfully created");
+
     }
 
     @PostMapping("/assignment")
-    public List<MappingConfigModel> createAssignmentMapping (
+    public ApiResponse<MappingConfigBatchResponseDTO> createAssignmentMapping (
             @RequestBody AssignmentMappingConfigCreateDTO assignmentMappingConfigCreateDTO
     )
     {
-        return mappingConfigModelService.createNewAssignmentConfig(assignmentMappingConfigCreateDTO);
+        List<BaseEntityAttributeModel> newMappingConfig = mappingConfigModelService.createNewAssignmentConfig(assignmentMappingConfigCreateDTO);
+
+        MappingConfigBatchResponseDTO mappingConfigBatchResponseDTO = new MappingConfigBatchResponseDTO(newMappingConfig);
+        return ApiResponse.ok(mappingConfigBatchResponseDTO, "New mappign config created successfully");
     }
 }

@@ -28,7 +28,7 @@ public class SystemController {
         SystemResponseDTO newSystem = systemService.registerNewSystem(systemModel);
 
         ApiResponse<SystemResponseDTO> response = ApiResponse.ok(
-                newSystem, "System " + newSystem.systemId() + "created successfully"
+                newSystem, "System " + newSystem.systemId() + " created successfully"
         );
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")

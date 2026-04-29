@@ -27,21 +27,19 @@ public class MappingExpressionEngine {
     private Object evaluateTransformation(MappingConfigModel mapping, Map<String, String> rowMap) {
         String rawValue = getValueIgnoreCase(rowMap, mapping.getSourceAttribute());
 
-        // Short-circuit: if the CSV cell is empty, we don't transform
         if (rawValue == null) {
             return null;
         }
 
         String expressionString = getActiveExpressionString(mapping);
         if (expressionString == null) {
-            return rawValue; // Fail-safe: return raw data if expression record is missing
+            return rawValue;
         }
 
         return runSpel(expressionString, rawValue, rowMap);
     }
 
     private Object getConstantValue(MappingConfigModel mapping) {
-        // We look for the active expression record, but treat it as a literal string
         return getActiveExpressionString(mapping);
     }
 
@@ -54,19 +52,14 @@ public class MappingExpressionEngine {
                 .findFirst()
                 .orElse(null);
     }
-    /**
-     * The Helper Method: Standardizes how we find values in the CSV row Map.
-     * This solves the "AccountName" vs "accountname" case sensitivity issues.
-     */
+
     private String getValueIgnoreCase(Map<String, String> rowMap, String sourceAttr) {
         if (sourceAttr == null || sourceAttr.isBlank()) return null;
 
-        // 1. Quick check for exact match
         if (rowMap.containsKey(sourceAttr)) {
             return rowMap.get(sourceAttr);
         }
 
-        // 2. Fuzzy check: ignore case and trim spaces
         return rowMap.entrySet().stream()
                 .filter(e -> e.getKey().trim().equalsIgnoreCase(sourceAttr.trim()))
                 .map(Map.Entry::getValue)

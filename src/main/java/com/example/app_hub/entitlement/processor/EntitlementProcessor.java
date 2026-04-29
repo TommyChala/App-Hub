@@ -87,25 +87,6 @@ public class EntitlementProcessor implements EntityProcessor<EntitlementProcessi
         sqlUtils.generateAttributeHashes(stagingTableName, context.usedAttributeNames(), entityType);
     }
 
-    /*
-    @Override
-    public void reconcile (EntityType type, SystemModel system, Long jobId) {
-        ResolvedEntitySchema schema = entitySchemaRegistry.resolve(type, system);
-        reconciliationService.performReconciliation(system, schema, Long jobId);
-    }
-
-    @Override
-    public void promote(EntityType entityType, SystemModel system, EntitlementProcessingContext context) {
-        try {
-            promotionService.promoteEntities(entityType, system, context.allAttributes());
-            //reconciliationService.promoteToProduction(entityType, system, context.allAttributes());
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-     */
-
     private void validateInputs(File file, SystemModel system) {
         if (file == null) {
             throw new ProcessorSetupException("Cannot process: File is missing or null");
@@ -126,7 +107,6 @@ public class EntitlementProcessor implements EntityProcessor<EntitlementProcessi
         try {
             csvDataReader.streamCsv(file, headers, csvRow -> {
                 try {
-                    // If this prints, we know the loop is working
                     if (transformedBatch.isEmpty()) {
                         System.out.println("DEBUG: Processing very first row...");
                     }
@@ -146,7 +126,7 @@ public class EntitlementProcessor implements EntityProcessor<EntitlementProcessi
                 } catch (Exception rowEx) {
                     System.err.println("ERROR inside CSV row processing: " + rowEx.getMessage());
                     rowEx.printStackTrace();
-                    throw rowEx; // Re-throw to stop the silent failure
+                    throw rowEx;
                 }
             });
         } catch (Exception streamEx) {
@@ -165,7 +145,6 @@ public class EntitlementProcessor implements EntityProcessor<EntitlementProcessi
 
 
     private void flush(String table, List<Map<String, String>> batch, EntitlementProcessingContext ctx) {
-        // We pass NULL for sourceToTarget because the batch is already transformed
         stagingService.persistBatch(
                 table,
                 batch,

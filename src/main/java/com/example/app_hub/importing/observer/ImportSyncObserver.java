@@ -46,13 +46,11 @@ public class ImportSyncObserver {
         this.assignmentPromotionService = assignmentPromotionService;
     }
 
-    @Transactional
+
     public synchronized void provideStatusReport(Long jobId, SystemModel system, EntityType type, String status) {
-        // Update the checklist in the DB
+
         jobService.updateActivityStatus(jobId, type, status);
         checkJobProgress(jobId, system);
-        //jobService.updateEntityStatus(jobId, type, status);
-        // Check if the whole job is ready
 
     }
 
@@ -74,8 +72,6 @@ public class ImportSyncObserver {
                 continue;
             }
             ResolvedEntitySchema schema = schemaRegistry.resolve(type, system);
-            //EntityProcessor<?> processor = processorFactory.getProcessor(type);
-            //processor.reconcile(type, system, jobId);
             if (type == EntityType.ASSIGNMENT) {
                 assignmentReconciliationService.performReconciliation(system, schema, jobId);
             }
@@ -86,8 +82,6 @@ public class ImportSyncObserver {
                 throw new IllegalArgumentException("Unknown type provided :" + type);
             }
 
-            //reconciliationService.performReconciliation(system, schema, jobId, type);
-            //obService.updateActivityStatus(jobId, type, "RECONCILED");
             jobService.updateActivityStatus(jobId, type, "RECONCILED");
             checkJobProgress(jobId, system);
 
@@ -95,7 +89,6 @@ public class ImportSyncObserver {
     }
 
     private void promoteToProduction(Long jobId, SystemModel system) {
-        // PHASE 2: Ordered Promotion
         List<EntityType> registeredTypes = jobService.getRegisteredTypesForJob(jobId);
 
         List<EntityType> preferredOrder = List.of(EntityType.ACCOUNT, EntityType.ENTITLEMENT, EntityType.ASSIGNMENT);

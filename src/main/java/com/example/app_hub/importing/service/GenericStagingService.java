@@ -59,9 +59,7 @@ public class GenericStagingService {
                     String targetColumn = insertColumns.get(columnIndex);
                     String value;
 
-                    // CLEAN FIX: Handle both pre-transformed data and raw CSV data
                     if (sourceToTargetColumnName != null) {
-                        // Logic for raw data: find which CSV header maps to this SQL column
                         String sourceHeader = sourceToTargetColumnName.entrySet().stream()
                                 .filter(entry -> entry.getValue().equalsIgnoreCase(targetColumn))
                                 .map(Map.Entry::getKey)
@@ -70,15 +68,12 @@ public class GenericStagingService {
 
                         value = row.get(sourceHeader.toLowerCase());
                     } else {
-                        // Logic for transformed data: row keys ALREADY match targetColumn names
                         value = row.get(targetColumn);
                     }
 
-                    // Set value with type safety
                     if (value == null || value.isBlank()) {
                         ps.setNull(columnIndex + 1, Types.VARCHAR);
                     } else {
-                        // Use headerDataTypes if available, otherwise default to String
                         DataType type = (headerDataTypes != null) ? headerDataTypes.get(targetColumn) : DataType.STRING;
                         setTypedValue(ps, columnIndex + 1, value, type);
                     }
@@ -103,11 +98,9 @@ public class GenericStagingService {
                 case INTEGER -> ps.setInt(index, Integer.parseInt(value.trim()));
                 case BOOLEAN -> ps.setBoolean(index, Boolean.parseBoolean(value.trim()));
                 case FLOAT -> ps.setDouble(index, Double.parseDouble(value.trim()));
-                // If you have a DATE type, you can add parsing logic here
                 default -> ps.setString(index, value);
             }
         } catch (Exception e) {
-            // Fallback to String if parsing fails to avoid crashing the whole batch
             ps.setString(index, value);
         }
     }

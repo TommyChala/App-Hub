@@ -24,7 +24,6 @@ public class ImportJobService {
     }
 
     public List<EntityType> getRegisteredTypesForJob(Long jobId) {
-        // Query your import_job_activities table for this jobId
         return activityRepository.findAllByImportJobModel_JobId(jobId)
                 .stream()
                 .map(ImportJobActivityModel::getType)
@@ -79,7 +78,6 @@ public class ImportJobService {
 
     public boolean isEverythingStaged(Long jobId) {
         ImportJobModel job = importJobModelRepository.findById(jobId).orElseThrow();
-        // If the count of items NOT 'STAGED' is 0, we are ready!
         return activityRepository.countByImportJobModelAndStatusNot(job, "STAGED") == 0;
     }
     public boolean isEverythingReconciled (Long jobId) {

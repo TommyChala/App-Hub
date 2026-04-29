@@ -2,6 +2,7 @@ package com.example.app_hub.importing.service;
 
 import com.example.app_hub.importing.config.ResolvedEntitySchema;
 import com.example.app_hub.system.model.SystemModel;
+import jakarta.transaction.Transactional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ public class AssignmentReconciliationService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Transactional
     public void performReconciliation (SystemModel system, ResolvedEntitySchema schema, Long jobId) {
 
         markNewStagingRows(schema, system);
@@ -24,27 +26,28 @@ public class AssignmentReconciliationService {
     }
 
     private void markNewStagingRows(ResolvedEntitySchema schema, SystemModel system) {
-        // Status 1: Exists in Staging but NOT in Hash table
         String sql = String.format("""
-                UPDATE %s s
-                SET import_status = 1
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM %s p 
-                    WHERE p.businesskey = (s.account_businesskey || '|' || s.entitlement_businesskey)
-                      AND p.system_id = ?
-                )
-                """, schema.stagingTable(), schema.hashTable());
+            UPDATE %s s
+            SET import_status = 1
+            WHERE NOT EXISTS (
+                SELECT 1 FROM %s p 
+                -- Use the two new columns instead of concatenation
+                WHERE p.account_bk = s.account_businesskey
+                  AND p.entitlement_bk = s.entitlement_businesskey
+                  AND p.system_id = ?
+            )
+            """, schema.stagingTable(), schema.hashTable());
 
         jdbcTemplate.update(sql, system.getSystemId());
     }
 
     private void markChangedStagingRows(ResolvedEntitySchema schema, SystemModel system) {
-        // Status 3: Business Key matches, but the row_hash is different
         String sql = String.format("""
-                UPDATE %s s
+                UPDATE %1$s s
                 SET import_status = 3
-                FROM %s p
-                WHERE p.businesskey = (s.account_businesskey || '|' || s.entitlement_businesskey)
+                FROM %2$s p
+                WHERE p.account_bk = s.account_businesskey
+                  AND p.entitlement_bk = s.entitlement_businesskey
                   AND p.system_id = ?
                   AND s.row_hash != p.row_hash
                 """, schema.stagingTable(), schema.hashTable());
@@ -53,12 +56,12 @@ public class AssignmentReconciliationService {
     }
 
     private void markUnchangedStagingRows(ResolvedEntitySchema schema, SystemModel system) {
-        // Status 2: Both Business Key AND row_hash match
         String sql = String.format("""
-                UPDATE %s s
+                UPDATE %1$s s
                 SET import_status = 2
-                FROM %s p
-                WHERE p.businesskey = (s.account_businesskey || '|' || s.entitlement_businesskey)
+                FROM %2$s p
+                WHERE p.account_bk = s.account_businesskey
+                  AND p.entitlement_bk = s.entitlement_businesskey
                   AND p.system_id = ?
                   AND s.row_hash = p.row_hash
                 """, schema.stagingTable(), schema.hashTable());
@@ -67,22 +70,17 @@ public class AssignmentReconciliationService {
     }
 
     private void markDeletedStagingRows(ResolvedEntitySchema schema, SystemModel system) {
-        // Status 5: Exist in Hash table but missing from current Staging file
-        // We insert these into staging as "tombstones" so the promoter knows to delete them
         String sql = String.format("""
-                INSERT INTO %1$s (account_businesskey, entitlement_businesskey, import_status, row_hash)
-                SELECT 
-                    SPLIT_PART(p.businesskey, '|', 1), 
-                    SPLIT_PART(p.businesskey, '|', 2), 
-                    5,
-                    p.row_hash
-                FROM %2$s p
-                WHERE p.system_id = ?
-                AND NOT EXISTS (
-                    SELECT 1 FROM %1$s s 
-                    WHERE (s.account_businesskey || '|' || s.entitlement_businesskey) = p.businesskey
-                )
-                """, schema.stagingTable(), schema.hashTable());
+            INSERT INTO %1$s (account_businesskey, entitlement_businesskey, import_status, row_hash)
+            SELECT p.account_bk, p.entitlement_bk, 5, p.row_hash
+            FROM %2$s p
+            WHERE p.system_id = ?
+            AND NOT EXISTS (
+                SELECT 1 FROM %1$s s 
+                WHERE s.account_businesskey = p.account_bk 
+                  AND s.entitlement_businesskey = p.entitlement_bk
+            )
+            """, schema.stagingTable(), schema.hashTable());
 
         jdbcTemplate.update(sql, system.getSystemId());
     }

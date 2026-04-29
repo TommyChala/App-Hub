@@ -23,12 +23,6 @@ public class EntityProcessorFactory {
                 ));
     }
 
-    /**
-     * Retrieves the correct processor implementation for the given EntityType.
-     * @param type The type of entity being collected (ACCOUNT, ENTITLEMENT, etc.).
-     * @return The specific EntityProcessor implementation.
-     * @throws IllegalArgumentException if no processor is registered for the given type.
-     */
     public EntityProcessor<?> getProcessor(EntityType type) {
         EntityProcessor<?> processor = processors.get(type);
         if (processor == null) {

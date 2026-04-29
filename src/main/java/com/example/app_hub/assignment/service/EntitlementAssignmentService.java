@@ -13,7 +13,6 @@ public class EntitlementAssignmentService {
     private final EntitlementModelRepository entitlementModelRepository;
     private final AccountRepository accountRepository;
     private final EntitlementAssignmentRepository entitlementAssignmentRepository;
-    //private final EntitlementAssignmentMapper entitlementAssignmentMapper;
 
     public EntitlementAssignmentService(EntitlementAssignmentRepository entitlementAssignmentRepository, AccountRepository accountRepository,
                                         EntitlementModelRepository entitlementModelRepository) {
@@ -22,20 +21,4 @@ public class EntitlementAssignmentService {
         this.entitlementAssignmentRepository = entitlementAssignmentRepository;
         //this.entitlementAssignmentMapper = entitlementAssignmentMapper;
     }
-/*
-    public EntitlementAssignmentModel createEntitlementAssignment (EntitlementAssignmentCreateDTO createRequest) {
-        EntitlementAssignmentModel newResourceAssignment = entitlementAssignmentMapper.CreateDTOToIdentity(createRequest);
-        newResourceAssignment.setEntitlement(iEntitlementRepository.findByEntitlementId(createRequest.getEntitlementId())
-                .orElseThrow(() -> new EntityNotFoundException("Could not find resource by id: " + createRequest.getEntitlementId())
-                )
-        );
-        newResourceAssignment.setAccount(iAccountRepository.findByAccountId(createRequest.getAccountId())
-                .orElseThrow(() -> new EntityNotFoundException("Could not find account by id: " + createRequest.getAccountId())
-                )
-        );
-        return entitlementAssignmentRepository.save(newResourceAssignment);
-    }
-
- */
-
 }

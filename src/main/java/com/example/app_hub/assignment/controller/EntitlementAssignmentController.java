@@ -17,13 +17,4 @@ public class EntitlementAssignmentController {
         this.entitlementAssignmentService = entitlementAssignmentService;
     }
 
-    /*
-    @PostMapping
-    public ResponseEntity<Void> createResourceAssignment (@RequestBody EntitlementAssignmentCreateDTO createRequest) {
-        entitlementAssignmentService.createEntitlementAssignment(createRequest);
-
-        return ResponseEntity.noContent().build();
-    }
-
-     */
 }

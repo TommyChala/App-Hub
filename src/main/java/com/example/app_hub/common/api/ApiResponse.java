@@ -27,7 +27,6 @@ public class ApiResponse<T> {
         this.timestamp = timestamp;
     }
 
-    // Use a standard constructor-based return to bypass Builder-Generic issues
     public static <T> ApiResponse<T> ok(T data, String message) {
         return new ApiResponse<>(true, message, data, LocalDateTime.now());
     }

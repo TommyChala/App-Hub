@@ -78,17 +78,6 @@ public class EntitlementAssignmentProcessor implements EntityProcessor<Entitleme
         System.out.println(context.insertColumns());
         String stagingTableName;
 
-        //STAGING VIRKER!!! Lav reconciliation fra staging til production specifikt til assignments.
-        //LAV RESTEN AF ENTITLEMENTASSIGNMENT PROCESSOR. NU ER CONTEXT DANNET.
-        /* Mapping skal kun bestå af accountreference (businesskey) og entitlementreference
-        (businesskey). Så laver vi et lookup på businesskey i entitybase tabellen for hver
-        reference baseret på entity typen. Så finder vi en række for både account og entitlement.
-        Så tager vi UUID og bruger som reference for hver af dem, som giver os koblingen.
-        Eks: Vi slår businesskey op sammen med entity type account i base tabellen.
-        Vi finder et match på værdien, og kan tage UUID. Så gør vi det samme for entitlement.
-        Måske har vi brug for indeks på businesskey så?
-        Skal have sin egen persisting logik. Kan... forhåbentlig laves simpel?
-         */
         try {
             stagingTableName = stagingTableManager.getStagingTableName(entityType, system);
             stagingTableManager.prepareStagingTableAndReturnStagingName(entityType, system, context, stagingTableName);
@@ -105,19 +94,6 @@ public class EntitlementAssignmentProcessor implements EntityProcessor<Entitleme
             throw new RuntimeException("Unable to create staging table: "+ ex);
         }
     }
-
-    /*
-
-    @Override
-    public void reconcile (EntityType type, SystemModel system, Long jobId) {}
-
-    @Override
-    public void promote(EntityType entityType, SystemModel system, EntitlementAssignmentProcessingContext context) {
-        //reconciliationService.promoteToProduction(entityType, system, context.allAttributes());
-        System.out.println(">>> [PROCESSOR SUCCESS] System: " + system.getName());
-    }
-
-     */
 
     private void validateInputs(File file, SystemModel system) {
         if (file == null) {
@@ -142,20 +118,16 @@ public class EntitlementAssignmentProcessor implements EntityProcessor<Entitleme
                     Map<String, String> transformedRow = new HashMap<>();
 
                     for (MappingConfigModel mapping : ctx.activeMappings()) {
-                        // 1. Get the raw target attribute name (e.g., "businesskey")
+
                         String rawName = SqlUtils.safeColumnName(mapping.getTargetAttribute().getName());
 
-                        // 2. Identify the prefix based on the EntityType
                         EntityType type = mapping.getTargetAttribute().getEntityType();
                         String prefix = (type == EntityType.ACCOUNT) ? "account_" : "entitlement_";
 
-                        // 3. This matches the column name in the Staging Table
                         String fullTargetKey = prefix + rawName;
 
-                        // 4. Calculate the value from the CSV
                         Object calculatedValue = mappingExpressionEngine.calculateValue(mapping, csvRow);
 
-                        // 5. Store it in the map with the FULL prefixed key
                         transformedRow.put(fullTargetKey, calculatedValue != null ? calculatedValue.toString() : null);
                     }
 
@@ -182,7 +154,6 @@ public class EntitlementAssignmentProcessor implements EntityProcessor<Entitleme
     }
 
     private void flush(String table, List<Map<String, String>> batch, EntitlementAssignmentProcessingContext ctx) {
-        // We pass NULL for sourceToTarget because the batch is already transformed
         stagingService.persistBatch(
                 table,
                 batch,

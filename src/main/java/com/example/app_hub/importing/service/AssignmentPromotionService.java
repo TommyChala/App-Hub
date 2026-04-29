@@ -2,16 +2,14 @@ package com.example.app_hub.importing.service;
 
 import com.example.app_hub.common.entitytype.EntityType;
 import com.example.app_hub.common.exception.PromotionException;
-import com.example.app_hub.common.model.BaseEntityAttributeModel;
-import com.example.app_hub.common.repository.BaseEntityAttributeModelRepository;
 import com.example.app_hub.importing.config.EntitySchemaRegistry;
 import com.example.app_hub.importing.config.ResolvedEntitySchema;
 import com.example.app_hub.system.model.SystemModel;
+import jakarta.transaction.Transactional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 import static com.example.app_hub.common.entitytype.EntityType.ACCOUNT;
@@ -28,6 +26,7 @@ public class AssignmentPromotionService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    @Transactional
     public void promoteAssignments(EntityType entityType, SystemModel system) {
 
         ResolvedEntitySchema schema = entitySchemaRegistry.resolve(entityType, system);
@@ -50,11 +49,9 @@ public class AssignmentPromotionService {
     private void softDeletedAssignments(ResolvedEntitySchema schema, SystemModel system) {
         UUID systemId = system.getId();
 
-        // 1. Fetch the Attribute IDs for the lookup
         UUID accountBusinessKey = getEntityBusinessKey(ACCOUNT);
         UUID entitlementBusinessKey = getEntityBusinessKey(ENTITLEMENT);
 
-        // 2. Perform Soft Delete (UPDATE instead of DELETE)
         String sql = String.format("""
         UPDATE %s 
         SET is_current = false 
@@ -128,24 +125,22 @@ public class AssignmentPromotionService {
 
     private void updateProductionHashes(SystemModel system, ResolvedEntitySchema schema) {
 
-        //ResolvedEntitySchema schema = entitySchemaRegistry.resolve(type, system);
+        String upsertSql = String.format("""
+        INSERT INTO %s (account_bk, entitlement_bk, system_id, row_hash)
+        SELECT s.account_businesskey, s.entitlement_businesskey, ?, s.row_hash
+        FROM %s s
+        WHERE s.import_status IN (1, 3)
+        ON CONFLICT (account_bk, entitlement_bk, system_id) 
+        DO UPDATE SET row_hash = EXCLUDED.row_hash
+        """, schema.hashTable(), schema.stagingTable());
 
-        String sql = String.format("""
-            INSERT INTO %s (businesskey, system_id, row_hash)
-            SELECT (s.account_businesskey || '|' || s.entitlement_businesskey), ?, s.row_hash
-            FROM %s s
-            WHERE s.import_status IN (1, 3)
-            ON CONFLICT (businesskey, system_id) 
-            DO UPDATE SET row_hash = EXCLUDED.row_hash
-            """, schema.hashTable(), schema.stagingTable());
-
-        jdbcTemplate.update(sql, system.getSystemId());
+        jdbcTemplate.update(upsertSql, system.getSystemId());
 
         String purgeSql = String.format("""
         DELETE FROM %s
         WHERE system_id = ?
-        AND businesskey IN (
-            SELECT (s.account_businesskey || '|' || s.entitlement_businesskey)
+        AND (account_bk, entitlement_bk) IN (
+            SELECT s.account_businesskey, s.entitlement_businesskey
             FROM %s s
             WHERE s.import_status = 5
         )
@@ -166,7 +161,6 @@ public class AssignmentPromotionService {
             default -> throw new RuntimeException("EntityType not allowed for business key lookup: " + entityType);
         };
 
-        // We join the base attributes with the specific model to get the correct UUID
         String sql = String.format("""
                 SELECT ea.id
                 FROM base_entity_attributes ea

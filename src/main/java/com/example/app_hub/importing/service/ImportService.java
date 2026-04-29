@@ -52,7 +52,7 @@ public class ImportService {
         }
     }
 
-    public void buildStagingTablesFromDirectory(String directoryPath, String systemId) {
+    public void gbuildStagingTablesFromDirectory(String directoryPath, String systemId) {
 
         File folder = new File(directoryPath);
 
@@ -81,7 +81,6 @@ public class ImportService {
                 continue;
             }
 
-            // Register the activity so the Observer knows to wait for this type
             importJobService.registerEntityActivity(newImportJob, type, file.getAbsolutePath());
             System.out.println("REGISTERED: " + type + " for Job ID: " + newImportJob.getJobId());
 
@@ -91,14 +90,11 @@ public class ImportService {
                         System.out.println("STARTING STAGING: " + type);
                         EntityProcessor<?> processor = processorFactory.getProcessor(type);
 
-                        // Phase 1: Heavy Lifting
                         processor.process(file, system, type);
 
-                        // Ping the Observer
                         syncObserver.provideStatusReport(newImportJob.getJobId(), system, type, "STAGED");
 
                     } catch (Exception e) {
-                        // Fail the specific activity if the processor blows up
                         importJobService.updateActivityStatus(newImportJob.getJobId(), type, "FAILED");
                         throw new RuntimeException("Failed to stage " + type, e);
                     }

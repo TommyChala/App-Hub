@@ -94,22 +94,6 @@ public class AccountProcessor implements EntityProcessor<AccountProcessingContex
         }
 
     }
-    /*
-
-    @Override
-    public void reconcile (EntityType type, SystemModel system, Long jobId) {
-        ResolvedEntitySchema schema = entitySchemaRegistry.resolve(type, system);
-        reconciliationService.performReconciliation(system, schema, jobId, type);
-    }
-
-    @Override
-    public void promote (EntityType entityType, SystemModel system, AccountProcessingContext context) {
-        promotionService.promoteEntities(entityType, system, context.allAttributes());
-        //reconciliationService.promoteToProduction(entityType, system, context.allAttributes());
-        System.out.println(">>> [PROCESSOR SUCCESS] System: " + system.getName());
-    }
-
-     */
 
     private void validateInputs(File file, SystemModel system) {
         if (file == null) {
